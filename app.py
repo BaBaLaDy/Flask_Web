@@ -24,27 +24,8 @@ app.register_blueprint(teacher_bp)
 app.before_request(jwt_authentication)
 
 
-# @app.before_request
-# def before_request():
-#     user_id = session.get("user_id")
-#     if user_id:
-#         try:
-#             user = UserModel.query.get(user_id)
-#             # 给g绑定一个叫做user的变量，他的值是user这个变量
-#             setattr(g, "user", user)
-#             # g.user = user
-#
-#         except:
-#             g.user = None
-
-
-# @app.context_processor
-# def context_processor():
-#     if hasattr(g, "user"):
-#         return {"user": g.user}
-#     else:
-#         return {}
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=5000)
+    app.run()
