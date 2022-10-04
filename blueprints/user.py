@@ -8,7 +8,7 @@ import string
 import random
 from datetime import datetime
 
-from utils import gennerate_tokens
+from utils import generate_tokens
 from .forms import RegisterForm, LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -58,7 +58,7 @@ def student_login():
             password = form.password.data
             user = StudentModel.query.filter_by(email=email).first()
             if user and check_password_hash(user.password, password):
-                token, refresh_token = gennerate_tokens(user.id)
+                token, refresh_token = generate_tokens(user.id)
                 #session['user_id'] = user.id
                 return jsonify({"code": 200, "message": "success", "token": token, "refresh_token": refresh_token})
 
