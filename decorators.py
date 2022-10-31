@@ -10,8 +10,8 @@ def login_required(func):
     def wrapper(*args, **kwargs):
         if not g.user_id:
             return jsonify({"code": 401, 'message': 'User must be authorized.'})
-        # elif g.is_refresh_token:
-        #     return jsonify({"code": 403, 'message': 'Do not use refresh token.'})
+        elif g.is_refresh_token:
+            return jsonify({"code": 403, 'message': 'Do not use refresh token, token is right way'})
         else:
             return func(*args, **kwargs)
 

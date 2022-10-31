@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash,g
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, g
 from exts import mail, db
 from flask_mail import Message
 from models import EmailCaptchaModel, StudentModel, CourseModel, JoinCourseModel, TeacherModel, AttendenceModel
@@ -11,6 +11,8 @@ from datetime import datetime
 from utils import generate_tokens
 from .forms import RegisterForm, LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
+
+from decorators import login_required
 
 
 bp = Blueprint("user", __name__, url_prefix="/user")
@@ -59,8 +61,9 @@ def student_login():
             user = StudentModel.query.filter_by(email=email).first()
             if user and check_password_hash(user.password, password):
                 token, refresh_token = generate_tokens(user.id)
+                user_name = user.name
                 #session['user_id'] = user.id
-                return jsonify({"code": 200, "message": "success", "token": token, "refresh_token": refresh_token})
+                return jsonify({"code": 200, "message": "success", "user_name": user_name, "token": token, "refresh_token": refresh_token})
 
             else:
                 flash("邮箱和密码不匹配！")
@@ -90,10 +93,10 @@ def student_register():
             user = StudentModel(email=email, name=username, password=hash_password, id=student_id)
             db.session.add(user)
             db.session.commit()
-            return redirect(url_for("user.login"))
+            return jsonify({"code": 200, "message": "regist success"})
         else:
 
-            return redirect(url_for("user.register"))
+            return jsonify({"code": 400, "message": "regist failed"})
 
 
 """退出登录"""
@@ -106,9 +109,6 @@ def logout():
 
 
 """获取验证码"""
-
-
-# memcached/redis/数据库中
 @bp.route("/captcha", methods=["POST"])
 def get_captcha():
     # GET， POST
@@ -150,9 +150,8 @@ def get_captcha():
     "course_id":123456    
 }
 """
-
-
 @bp.route("/join_course", methods=["POST"])
+@login_required
 def join_course():
     if request.method == 'POST':
         json_data = request.get_json()
@@ -166,17 +165,54 @@ def join_course():
                 # code: 400 失败的请求
                 return jsonify({"code": 401, "message": "课号不存在"})
             else:
-                student_id = json_data.get('student_id')
+                student_id = g.user_id
+                course_id = json_data.get('course_id')
+                if JoinCourseModel.query.filter_by(student_id=student_id, course_id=course_id).first():
+                    return jsonify({"code": 402, "message": "已经加入过"})
+
+                else:
+                    join_data = JoinCourseModel(student_id=student_id, course_id=course_id)
+                    db.session.add(join_data)
+                    db.session.commit()
+                    Course = CourseModel.query.filter_by(id=course_id).first()
+                    Teacher = TeacherModel.query.filter_by(id=Course.teacher_id).first()
+
+                    # code: 200 成功的、正常的请求
+                    return jsonify({"code": 200, "Teachername": Teacher.name, "Coursename": Course.course_name})
+
+"""
+退出课程
+{
+ "student_id":2000300115, //从登录信息获取
+ "course_id":123456
+}
+"""
+@bp.route("/quit_course", methods=["POST"])
+@login_required
+def quit_course():
+    if request.method == 'POST':
+        json_data = request.get_json()
+        if json_data == '' or json_data is None:
+            # code: 400 失败的请求
+            return jsonify({"code": 400, "message": "数据错误"})
+        else:
+            # 先查询课号是否存在
+            course_id = json_data.get('course_id')
+            if not JoinCourseModel.query.filter_by(course_id=course_id).first():
+                # code: 400 失败的请求
+                return jsonify({"code": 401, "message": "课号不存在"})
+            else:
+                student_id = g.user_id
                 course_id = json_data.get('course_id')
 
-                join_data = JoinCourseModel(student_id=student_id, course_id=course_id)
-                db.session.add(join_data)
+                delete_data = JoinCourseModel.query.filter_by(student_id=student_id, course_id=course_id).all()
+                print(delete_data)
+                for i in delete_data:
+                    db.session.delete(i)
                 db.session.commit()
-                Course = CourseModel.query.filter_by(id=course_id).first()
-                Teacher = TeacherModel.query.filter_by(id=Course.teacher_id).first()
-
                 # code: 200 成功的、正常的请求
-                return jsonify({"code": 200, "Teachername": Teacher.name, "Coursename": Course.course_name})
+                return jsonify({"code": 200, "message": "quit success"})
+
 
 
 """
@@ -188,6 +224,7 @@ def join_course():
 
 
 @bp.route("/inquire_attendance", methods=["GET"])
+@login_required
 def inquire_attendance():
     if request.method == 'GET':
         json_data = request.get_json()
@@ -206,3 +243,34 @@ def inquire_attendance():
             #     print(show)
 
             return jsonify({"code": 200, "message": data})
+
+@bp.route("/inquire_joincourse", methods=["POST"])
+@login_required
+def inquire_joincourse():
+    if request.method == 'POST':
+        student_id = g.user_id
+        join_course_data = JoinCourseModel.query.filter_by(student_id=student_id).all()
+        data = query2dict(join_course_data)
+        #print(data)
+        # print(str(datetime.now()))
+        # for i in data:
+        #     show = json.dumps(i,ensure_ascii=False)
+        #     print(show)
+
+        return jsonify({"code": 200, "message": data})
+    else:
+        return jsonify({"code": 400, "message": "请求错误"})
+
+
+
+@bp.route("/refesh_jwt",methods = ["POST"])
+def refesh_jwt():
+    """
+        刷新token
+    """
+    user_id = g.user_id
+    if user_id and g.is_refresh_token:
+        token, refresh_token = generate_tokens(user_id, with_refresh_token=False)
+        return jsonify({"code": 200, "message": "success", "token": token})
+    else:
+        return jsonify({"code": 403, "message": "Wrong refresh token."})

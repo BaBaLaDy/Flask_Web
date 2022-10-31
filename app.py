@@ -8,10 +8,11 @@ from blueprints import qa_bp
 from blueprints import user_bp,teacher_bp
 from flask_migrate import Migrate
 from utils import jwt_authentication
-
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config.from_object(config)
+CORS(app, resources=r'/*')
 db.init_app(app)
 mail.init_app(app)
 
@@ -27,5 +28,5 @@ app.before_request(jwt_authentication)
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
     app.run()

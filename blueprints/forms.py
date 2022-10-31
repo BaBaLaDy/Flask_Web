@@ -7,8 +7,8 @@ class LoginForm(wtforms.Form):
     password = wtforms.StringField(validators=[length(min=6, max=30)])
 
 class RegisterForm(wtforms.Form):
-    username = wtforms.StringField(validators=[length(min=3,max=20)])
-    student_id = wtforms.StringField(validators=[length(min=3,max=20)])
+    username = wtforms.StringField(validators=[length(min=1, max=20)])
+    student_id = wtforms.StringField(validators=[length(min=3, max=20)])
     email = wtforms.StringField(validators=[email()])
     captcha = wtforms.StringField(validators=[length(min=4, max=4)])
     password = wtforms.StringField(validators=[length(min=6, max=30)])

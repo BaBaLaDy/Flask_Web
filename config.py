@@ -2,7 +2,7 @@ HOSTNAME = '127.0.0.1'
 PORT     = '3306'
 DATABASE = 'dachuang'
 USERNAME = 'root'
-PASSWORD = '838292'
+PASSWORD = 'Hlt838292.'
 DB_URI = 'mysql+pymysql://{}:{}@{}:{}/{}?charset=utf8'.format(USERNAME,PASSWORD,HOSTNAME,PORT,DATABASE)
 
 SQLALCHEMY_DATABASE_URI = DB_URI
@@ -20,7 +20,7 @@ MAIL_USE_TLS = False
 MAIL_USE_SSL = True
 MAIL_DEBUG = True
 MAIL_USERNAME = "1872215235@qq.com"
-MAIL_PASSWORD = "dneofkbhxulsegjf"
+MAIL_PASSWORD = "csumgwhwhezzcghe"
 MAIL_DEFAULT_SENDER = "1872215235@qq.com"
 
 # JWT设置

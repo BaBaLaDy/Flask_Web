@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint,render_template,request,redirect,url_for,jsonify,session,flash
+from flask import Blueprint,render_template,request,redirect,url_for,jsonify,session,flash, g
 from exts import mail,db
 from flask_mail import Message
 from models import TeacherModel,CourseModel,AttendenceModel
@@ -58,8 +58,9 @@ def teacher_login():
             user = TeacherModel.query.filter_by(email=email).first()
             if user and check_password_hash(user.password, password):
                 token, refresh_token = generate_tokens(user.id)
+                user_name = user.name
                 # session['user_id'] = user.id
-                return jsonify({"code": 200, "message": "success", "token": token, "refresh_token": refresh_token})
+                return jsonify({"code": 200, "message": "success", "user_name": user_name, "token": token, "refresh_token": refresh_token})
             else:
                 flash("邮箱和密码不匹配！")
                 return jsonify({"code": 201, "message": "邮箱和密码不匹配"})
@@ -87,40 +88,41 @@ def teacher_register():
             user = TeacherModel(email=email, name=username, password=hash_password, id=student_id)
             db.session.add(user)
             db.session.commit()
-            return redirect(url_for("teacher.teacher_login"))
+            return jsonify({"code": 200, "message": "regist success"})
         else:
-
-            return redirect(url_for("user.register"))
+            return jsonify({"code": 400, "message": "regist failed"})
 
 """
-创建班级
+创建课程
 {
-    "course_id":543112
-    "course_name":"语文课"
-    “teacher_id”:2010232
+    "course_id":543112,
+    "course_name":"语文课",
+    "teacher_id":2010232
 }
 """
 @bp.route('/create_course',methods = ["POST"])
 @login_required
 def creat_course():
     if request.method == 'POST':
-        form_cc = CreateCourse_Form(request.form)
-        print(form_cc)
-        if form_cc.validate():
-            course_id = form_cc.course_id.data
-            course_name = form_cc.course_name.data
-            teacher_id = form_cc.teacher_id.data    # 可从登录信息session中获取
-
-            course = CourseModel(id=course_id,course_name=course_name,teacher_id=teacher_id)
-            db.session.add(course)
-            db.session.commit()
-
-            # code: 200 成功的、正常的请求
-            return jsonify({"code": 200})
-
-        else:
+        json_data = request.get_json()
+        print(json_data)
+        if json_data.get('course_id') is None or json_data.get('course_name') is None:
             # code: 400 失败的请求
             return jsonify({"code": 400, "message": "数据输入错误"})
+        else:
+            course_id = json_data.get('course_id')
+            course_name =  json_data.get('course_name')
+            teacher_id = g.user_id  # 可从登录信息session中获取
+            if CourseModel.query.filter_by(id=course_id).first():
+                return jsonify({"code": 401, "message": "该课号已存在"})
+            else:
+                course = CourseModel(id=course_id, course_name=course_name, teacher_id=teacher_id)
+                db.session.add(course)
+                db.session.commit()
+
+                # code: 200 成功的、正常的请求
+                return jsonify({"code": 200, "message": "success"})
+
 
 """
 考勤成功记录
@@ -135,8 +137,11 @@ def creat_course():
 @bp.route('/attendance_record',methods = ["POST"])
 @login_required
 def attendance_record():
+    print("enter")
     if request.method == 'POST':
+        print("YES")
         json_data = request.get_json()
+        print("YES")
         print(json_data)
         if json_data.get('course_id') is None or json_data.get('student_id') is None or json_data.get('course_time') is None:
             # code: 400 失败的请求
@@ -161,7 +166,7 @@ def attendance_record():
             db.session.commit()
 
             # code: 200 成功的、正常的请求
-            return jsonify({"code": 200})
+            return jsonify({"code": 200, "message": "success"})
 
 
 """
@@ -182,7 +187,7 @@ def check_course_exist():
             course_id = json_data.get('course_id')
             if CourseModel.query.filter_by(id=course_id).first():
                 # code: 200 成功的、正常的请求
-                return jsonify({"code": 200})
+                return jsonify({"code": 200, "message": "课号存在"})
             else:
                 # code: 400 失败的请求
                 return jsonify({"code": 400, "message": "课号不存在"})
@@ -210,6 +215,22 @@ def inquire_attendance():
                 return jsonify({"code": 200, "message": data})
             else:
                 return jsonify({"code": 400, "message": "未查询到相关考勤信息"})
+
+"""
+显示创建的所有课号
+"""
+@bp.route('/inquire_course',methods = ["POST"])
+@login_required
+def inquire_course():
+    if request.method == 'POST':
+        teacher_id = g.user_id
+        course_data = CourseModel.query.filter_by(teacher_id=teacher_id).all()
+        if course_data:
+            data = query2dict(course_data)
+            print(data)
+            return jsonify({"code": 200, "message": data})
+        else:
+            return jsonify({"code": 400, "message": "未查询到课程信息"})
 
 
 
