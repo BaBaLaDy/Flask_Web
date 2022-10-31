@@ -59,8 +59,9 @@ def teacher_login():
             if user and check_password_hash(user.password, password):
                 token, refresh_token = generate_tokens(user.id)
                 user_name = user.name
+                user_id = user.id
                 # session['user_id'] = user.id
-                return jsonify({"code": 200, "message": "success", "user_name": user_name, "token": token, "refresh_token": refresh_token})
+                return jsonify({"code": 200, "message": "success", "user_name": user_name, "user_id": user_id, "token": token, "refresh_token": refresh_token})
             else:
                 flash("邮箱和密码不匹配！")
                 return jsonify({"code": 201, "message": "邮箱和密码不匹配"})

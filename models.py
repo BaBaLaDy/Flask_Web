@@ -19,16 +19,16 @@ class UserModel(db.Model):
     join_time = db.Column(db.DateTime, default=datetime.now)
 
 
+
+
 """
 数据库设计
 """
-
-
 class StudentModel(db.Model):
     __tablename__ = "student"
     id = db.Column(db.Integer, primary_key=True, unique=True, nullable=False)
     name = db.Column(db.String(200), nullable=False)
-    email = db.Column(db.String(100), nullable=False, unique=True)
+    email = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
 
@@ -36,7 +36,7 @@ class TeacherModel(db.Model):
     __tablename__ = "teacher"
     id = db.Column(db.Integer, primary_key=True, unique=True, nullable=False)
     name = db.Column(db.String(200), nullable=False)
-    email = db.Column(db.String(100), nullable=False, unique=True)
+    email = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
 

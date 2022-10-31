@@ -9,7 +9,7 @@ import random
 from datetime import datetime
 
 from utils import generate_tokens
-from .forms import RegisterForm, LoginForm
+from .forms import RegisterForm, LoginForm, ID_RegisterForm, ID_LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from decorators import login_required
@@ -62,8 +62,9 @@ def student_login():
             if user and check_password_hash(user.password, password):
                 token, refresh_token = generate_tokens(user.id)
                 user_name = user.name
+                user_id = user.id
                 #session['user_id'] = user.id
-                return jsonify({"code": 200, "message": "success", "user_name": user_name, "token": token, "refresh_token": refresh_token})
+                return jsonify({"code": 200, "message": "success", "user_name": user_name, "user_id": user_id, "token": token, "refresh_token": refresh_token})
 
             else:
                 flash("邮箱和密码不匹配！")
@@ -71,6 +72,27 @@ def student_login():
         else:
             flash("邮箱或密码格式错误！")
             return jsonify({"code": 202, "message": "邮箱或密码格式错误"})
+
+@bp.route('/student_id_login', methods=["POST"])
+def student_id_login():
+    if request.method == 'POST':
+        form = ID_LoginForm(request.form)
+        if form.validate():
+            id = form.id.data
+            password = form.password.data
+            user = StudentModel.query.filter_by(id=id).first()
+            if user and check_password_hash(user.password, password):
+                token, refresh_token = generate_tokens(user.id)
+                user_name = user.name
+                user_id = user.id
+                #session['user_id'] = user.id
+                return jsonify({"code": 200, "message": "success", "user_name": user_name, "user_id": user_id, "token": token, "refresh_token": refresh_token})
+
+            else:
+                return jsonify({"code": 201, "message": "邮箱和密码不匹配"})
+        else:
+            return jsonify({"code": 202, "message": "邮箱或密码格式错误"})
+
 
 
 """学生注册"""
@@ -88,6 +110,25 @@ def student_register():
             student_id = form_rg.student_id.data
             password = form_rg.password.data
 
+            # MD5码
+            hash_password = generate_password_hash(password)
+            user = StudentModel(email=email, name=username, password=hash_password, id=student_id)
+            db.session.add(user)
+            db.session.commit()
+            return jsonify({"code": 200, "message": "regist success"})
+        else:
+
+            return jsonify({"code": 400, "message": "regist failed"})
+
+@bp.route('/student_id_register', methods=["POST"])
+def student_id_register():
+    if request.method == 'POST':
+        form_rg = ID_RegisterForm(request.form)
+        if form_rg.validate():
+            email = form_rg.email.data
+            username = form_rg.username.data
+            student_id = form_rg.student_id.data
+            password = form_rg.password.data
             # MD5码
             hash_password = generate_password_hash(password)
             user = StudentModel(email=email, name=username, password=hash_password, id=student_id)

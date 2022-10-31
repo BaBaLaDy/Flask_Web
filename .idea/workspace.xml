@@ -2,19 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f5ee6b99-03e1-4287-9074-1466f66b339a" name="变更" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/project_learn.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/project_learn.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blueprints/forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/blueprints/forms.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/blueprints/qa.py" beforeDir="false" afterPath="$PROJECT_DIR$/blueprints/qa.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blueprints/teacher.py" beforeDir="false" afterPath="$PROJECT_DIR$/blueprints/teacher.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blueprints/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/blueprints/user.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/decorators.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/uwsgi.ini" beforeDir="false" afterPath="$PROJECT_DIR$/uwsgi.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/models.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -130,6 +122,7 @@
       <workItem from="1665579206331" duration="391000" />
       <workItem from="1666933859218" duration="650000" />
       <workItem from="1666939995399" duration="1916000" />
+      <workItem from="1667196414606" duration="5334000" />
     </task>
     <servers />
   </component>
