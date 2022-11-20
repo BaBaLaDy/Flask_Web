@@ -264,26 +264,29 @@ def quit_course():
 """
 
 
-@bp.route("/inquire_attendance", methods=["GET"])
+@bp.route("/inquire_attendance", methods=["POST"])
 @login_required
 def inquire_attendance():
-    if request.method == 'GET':
-        json_data = request.get_json()
-        if json_data == '' or json_data is None:
-            # code: 400 失败的请求
-            return jsonify({"code": 400, "message": "数据错误"})
+    if request.method == 'POST':
+        student_id = g.user_id
+        attendance_data = AttendenceModel.query.filter_by(student_id=student_id).all()
+        if attendance_data is None:
+            return jsonify({"code": 200, "message": 'Null'})
         else:
-            student_id = json_data.get('student_id')
-            attendance_data = AttendenceModel.query.filter_by(student_id=student_id).all()
-            count = AttendenceModel.query.filter_by(student_id=student_id).count()
             data = query2dict(attendance_data)
             print(data)
-            # print(str(datetime.now()))
-            # for i in data:
-            #     show = json.dumps(i,ensure_ascii=False)
-            #     print(show)
+        # print(str(datetime.now()))
+        # for i in data:
+        #     show = json.dumps(i,ensure_ascii=False)
+        #     print(show)
 
             return jsonify({"code": 200, "message": data})
+
+"""
+查询加入课程
+
+"""
+
 
 @bp.route("/inquire_joincourse", methods=["POST"])
 @login_required
@@ -291,14 +294,26 @@ def inquire_joincourse():
     if request.method == 'POST':
         student_id = g.user_id
         join_course_data = JoinCourseModel.query.filter_by(student_id=student_id).all()
-        data = query2dict(join_course_data)
-        #print(data)
-        # print(str(datetime.now()))
-        # for i in data:
-        #     show = json.dumps(i,ensure_ascii=False)
-        #     print(show)
+        if join_course_data is None:
+            return jsonify({"code": 200, "message": 'Null'})
 
-        return jsonify({"code": 200, "message": data})
+        data = query2dict(join_course_data)
+        list = []
+        print(data)
+        for i in data:
+
+            show = json.dumps(i,ensure_ascii=False)
+            print(show)
+            json_data = json.loads(show)
+            course_id = json_data['course_id']
+            course_data = CourseModel.query.filter_by(id=course_id).first()
+            name = course_data.course_name
+            new_json = json.dumps({**json.loads(show), **{"course_name": name}}, ensure_ascii=False)
+            new_json = json.loads(new_json)
+            list.append(new_json)
+            print(list)
+
+        return jsonify({"code": 200, "message": list})
     else:
         return jsonify({"code": 400, "message": "请求错误"})
 

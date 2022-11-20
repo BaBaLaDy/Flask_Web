@@ -65,3 +65,11 @@ class JoinCourseModel(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
+
+class AttendenceRecordModel(db.Model):
+    __tablename__ = "attendenceRecord"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
+    course_name = db.Column(db.String(50), nullable=False)
+    attendance_time = db.Column(db.String(50), nullable=False)
+    lessons_time = db.Column(db.String(50), nullable=False)

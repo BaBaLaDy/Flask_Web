@@ -3,11 +3,11 @@ import json
 from flask import Blueprint,render_template,request,redirect,url_for,jsonify,session,flash, g
 from exts import mail,db
 from flask_mail import Message
-from models import TeacherModel,CourseModel,AttendenceModel
+from models import TeacherModel, CourseModel, AttendenceModel, AttendenceRecordModel, JoinCourseModel, StudentModel
 import string
 import random
-from datetime import datetime
-from .forms import RegisterForm,LoginForm,CreateCourse_Form
+from datetime import datetime,date
+from .forms import RegisterForm,LoginForm,CreateCourse_Form,ID_LoginForm,ID_RegisterForm
 from werkzeug.security import generate_password_hash,check_password_hash
 from utils import generate_tokens
 from decorators import login_required
@@ -70,6 +70,26 @@ def teacher_login():
             return jsonify({"code": 202, "message": "邮箱或密码格式错误"})
 
 
+@bp.route('/teacher_id_login', methods=["POST"])
+def teacher_id_login():
+    if request.method == 'POST':
+        form = ID_LoginForm(request.form)
+        if form.validate():
+            id = form.id.data
+            password = form.password.data
+            user = TeacherModel.query.filter_by(id=id).first()
+            if user and check_password_hash(user.password, password):
+                token, refresh_token = generate_tokens(user.id)
+                user_name = user.name
+                user_id = user.id
+                #session['user_id'] = user.id
+                return jsonify({"code": 200, "message": "success", "user_name": user_name, "user_id": user_id, "token": token, "refresh_token": refresh_token})
+
+            else:
+                return jsonify({"code": 201, "message": "邮箱和密码不匹配"})
+        else:
+            return jsonify({"code": 202, "message": "邮箱或密码格式错误"})
+
 
 """老师注册"""
 @bp.route('/teacher_register',methods = ["GET","POST"])
@@ -91,6 +111,26 @@ def teacher_register():
             db.session.commit()
             return jsonify({"code": 200, "message": "regist success"})
         else:
+            return jsonify({"code": 400, "message": "regist failed"})
+
+
+@bp.route('/teacher_id_register', methods=["POST"])
+def teacher_id_register():
+    if request.method == 'POST':
+        form_rg = ID_RegisterForm(request.form)
+        if form_rg.validate():
+            email = form_rg.email.data
+            username = form_rg.username.data
+            student_id = form_rg.student_id.data
+            password = form_rg.password.data
+            # MD5码
+            hash_password = generate_password_hash(password)
+            user = TeacherModel(email=email, name=username, password=hash_password, id=student_id)
+            db.session.add(user)
+            db.session.commit()
+            return jsonify({"code": 200, "message": "regist success"})
+        else:
+
             return jsonify({"code": 400, "message": "regist failed"})
 
 """
@@ -152,7 +192,7 @@ def attendance_record():
             course_name = CourseModel.query.filter_by(id=course_id).first().course_name
             student_id = json_data.get('student_id')
             lesson_time = json_data.get('course_time')
-            attendance_time = str(datetime.now())
+            attendance_time = date.today()
             attendance_state = '出勤'
 
             attendance_data = AttendenceModel(
@@ -199,23 +239,23 @@ def check_course_exist():
     "course_id":123456
 }
 """
-@bp.route('/inquire_attendance',methods = ["POST"])
-@login_required
-def inquire_attendance():
-    if request.method == 'POST':
-        json_data = request.get_json()
-        if json_data == '' or json_data is None:
-            # code: 400 失败的请求
-            return jsonify({"code": 400, "message": "数据错误"})
-        else:
-            course_id = json_data.get('course_id')
-            attendance_data = AttendenceModel.query.filter_by(course_id=course_id).all()
-            if attendance_data:
-                data = query2dict(attendance_data)
-                print(data)
-                return jsonify({"code": 200, "message": data})
-            else:
-                return jsonify({"code": 400, "message": "未查询到相关考勤信息"})
+# @bp.route('/inquire_attendance',methods = ["POST"])
+# @login_required
+# def inquire_attendance():
+#     if request.method == 'POST':
+#         json_data = request.get_json()
+#         if json_data == '' or json_data is None:
+#             # code: 400 失败的请求
+#             return jsonify({"code": 400, "message": "数据错误"})
+#         else:
+#             course_id = json_data.get('course_id')
+#             attendance_data = AttendenceModel.query.filter_by(course_id=course_id).all()
+#             if attendance_data:
+#                 data = query2dict(attendance_data)
+#                 print(data)
+#                 return jsonify({"code": 200, "message": data})
+#             else:
+#                 return jsonify({"code": 400, "message": "未查询到相关考勤信息"})
 
 """
 显示创建的所有课号
@@ -232,6 +272,136 @@ def inquire_course():
             return jsonify({"code": 200, "message": data})
         else:
             return jsonify({"code": 400, "message": "未查询到课程信息"})
+
+
+"""
+
+添加发起考勤记录
+{
+    "course_id":123456
+    "lessons_time":"二"
+}
+"""
+@bp.route('/input_attendenceRecord',methods = ["POST"])
+@login_required
+def Input_attendenceRecord():
+    if request.method == 'POST':
+        json_data = request.get_json()
+        if json_data == '' or json_data is None:
+            # code: 400 失败的请求
+            return jsonify({"code": 400, "message": "数据错误"})
+        else:
+            course_id = json_data.get('course_id')
+            course_name = CourseModel.query.filter_by(id=course_id).first().course_name
+            attendance_time = date.today()
+            print(attendance_time)
+            lesson_time = json_data.get('lessons_time')
+            record_attendance = AttendenceRecordModel.query.filter_by(course_id=course_id,
+                                                                    attendance_time=attendance_time,
+                                                                    lessons_time=lesson_time).first()
+            print(record_attendance)
+            if record_attendance:
+                print("记录已存在，直接覆盖")
+                db.session.delete(record_attendance)
+            input_data = AttendenceRecordModel(
+                                            course_id=course_id,
+                                            course_name = course_name,
+                                            attendance_time=attendance_time,
+                                            lessons_time=lesson_time,
+            )
+            db.session.add(input_data)
+            db.session.commit()
+            return jsonify({"code": 200, "message": "success"})
+
+
+"""
+查询发考勤记录
+{
+    "course_id":123456
+}
+"""
+@bp.route('/inquire_attendenceRecord',methods = ["POST"])
+@login_required
+def inquire_attendenceRecord():
+    if request.method == 'POST':
+        json_data = request.get_json()
+        if json_data == '' or json_data is None:
+            # code: 400 失败的请求
+            return jsonify({"code": 400, "message": "数据错误"})
+        else:
+            course_id = json_data.get('course_id')
+            record_data = AttendenceRecordModel.query.filter_by(course_id=course_id).all()
+            if record_data:
+                data = query2dict(record_data)
+                print(data)
+                return jsonify({"code": 200, "message": data})
+            else:
+                return jsonify({"code": 400, "message": "未查询到考勤发起信息"})
+
+
+
+"""
+查询考勤记录
+{
+    "course_id":123456
+    "attendance_time":2022-11-19
+    "lessons_time":"二"
+}
+"""
+@bp.route('/inquire_attendance',methods = ["POST"])
+@login_required
+def inquire_attendance():
+    if request.method == 'POST':
+        json_data = request.get_json()
+        if json_data == '' or json_data is None:
+            # code: 400 失败的请求
+            return jsonify({"code": 400, "message": "数据错误"})
+        else:
+            course_id = json_data.get('course_id')
+            attendance_time = json_data.get('attendance_time')
+            lessons_time = json_data.get('lessons_time')
+            attendance_data = AttendenceModel.query.filter_by(course_id=course_id,
+                                                              attendance_time=attendance_time,
+                                                              lessons_time=lessons_time).all()
+            course_data = JoinCourseModel.query.filter_by(course_id=course_id).all()
+            a_list = []
+            kaoqing_list = []
+            if attendance_data:
+                a_data = query2dict(attendance_data)
+                if course_data:
+                    c_data = query2dict(course_data)
+                    for i in a_data:
+                        json_data = json.dumps(i, ensure_ascii=False)
+                        json_data = json.loads(json_data)
+                        student_id = json_data['student_id']
+                        if student_id not in a_list:
+                            a_list.append(student_id)
+                            print(a_list)
+                            student_name = StudentModel.query.filter_by(id=student_id).first().name
+                            chuqing_data = {"attendance_state": "出勤", "student_id": student_id,"student_name":student_name}
+                            kaoqing_list.append(chuqing_data)
+                    for i in c_data:
+                        cjson_data = json.dumps(i, ensure_ascii=False)
+                        cjson_data = json.loads(cjson_data)
+                        cstudent_id = cjson_data['student_id']
+                        if cstudent_id in a_list:
+                            pass
+                        else:
+                            student_name = StudentModel.query.filter_by(id=cstudent_id).first().name
+                            queqing_data = {"attendance_state": "缺勤", "student_id": cstudent_id,"student_name":student_name}
+                            kaoqing_list.append(queqing_data)
+
+                    return jsonify({"code": 200, "message": kaoqing_list})
+            else:
+                return jsonify({"code": 400, "message": "查询不到考勤信息"})
+
+
+
+
+
+
+
+
 
 
 
